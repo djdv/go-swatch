@@ -11,7 +11,6 @@ import (
 type FormatStandard int
 
 const (
-	bielZone       = "CET"
 	beatsPerSecond = 86.4
 
 	// @000
@@ -34,10 +33,8 @@ func CentiBeats(t time.Time) float64 {
 
 // RawBeats formats a given time of day to a b64 representation of a Swatch Beat.
 func RawBeats(t time.Time) float64 {
-	biel, err := time.LoadLocation(bielZone)
-	if err != nil {
-		panic(err) // something bad is going on in stdlib, OOM, etc.
-	}
+	// Because swatch doesn't observe daylight savings, using CET will cause an error
+	biel := time.FixedZone("UTC+1", 1*60*60) // 1 left in to demonstrate calculation
 
 	tBiel := t.In(biel)
 	// calculate seconds past midnight, divided it by beatsPerSecond
