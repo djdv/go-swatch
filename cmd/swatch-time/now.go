@@ -14,11 +14,18 @@ import (
 
 func main() {
 	var (
-		execName      = filepath.Base(os.Args[0])
-		cmdName       = strings.TrimSuffix(execName, filepath.Ext(execName))
-		flagSet       = flag.NewFlagSet(cmdName, flag.ExitOnError)
+		execName = filepath.Base(os.Args[0])
+		cmdName  = strings.TrimSuffix(execName, filepath.Ext(execName))
+		flagSet  = flag.NewFlagSet(cmdName, flag.ExitOnError)
+		usage    = func() {
+			output := flagSet.Output()
+			fmt.Fprintf(output, "Usage of %s:\n", cmdName)
+			flagSet.PrintDefaults()
+			fmt.Fprint(output, "(no flags defaults to centibeat format @000.00)\n")
+		}
 		raw, standard bool
 	)
+	flagSet.Usage = usage
 	flagSet.BoolVar(&raw, "r", false, "use raw float format @000.000000")
 	flagSet.BoolVar(&standard, "s", false, "use Swatch standard format @000")
 
