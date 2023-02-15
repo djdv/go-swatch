@@ -42,19 +42,17 @@ func main() {
 	}
 
 	if raw && standard {
-		fmt.Println("Use none or 1 command flags, never both")
+		fmt.Fprint(flagSet.Output(), "Use none or 1 of the command flags, never combined.")
 		return
 	}
-
-	if raw {
-		fmt.Println(swatch.Now(swatch.Raw))
-		return
+	var format swatch.FormatStandard
+	switch {
+	case raw:
+		format = swatch.Raw
+	case standard:
+		format = swatch.Swatch
+	default:
+		format = swatch.Centi
 	}
-
-	if standard {
-		fmt.Println(swatch.Now(swatch.Swatch))
-		return
-	}
-
-	fmt.Println(swatch.Now(swatch.Centi))
+	fmt.Println(swatch.Now(format))
 }
