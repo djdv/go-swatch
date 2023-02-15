@@ -32,6 +32,14 @@ func main() {
 	if flagSet.Parse(os.Args[1:]) != nil {
 		return
 	}
+	if args := flagSet.Args(); len(args) > 0 {
+		fmt.Fprintf(flagSet.Output(),
+			"%s accepts no arguments but was passed: %s\n",
+			cmdName, strings.Join(args, ", "),
+		)
+		flagSet.Usage()
+		return
+	}
 
 	if raw && standard {
 		fmt.Println("Use none or 1 command flags, never both")
