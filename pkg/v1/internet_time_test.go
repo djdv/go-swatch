@@ -43,6 +43,29 @@ func TestNew(t *testing.T) {
 	_ = (&internetTime{}).UnixNano()
 }
 
+func TestSanity(t *testing.T) {
+	// When given two dates exactly a beat apart, the beats are indeed 1 beat difference
+	t1, err := time.Parse(time.RFC3339, "2006-02-15T12:00:00.000+01:00")
+	if err != nil {
+		t.Fatalf("error parsing test time: %s", err)
+	}
+
+	t2, err := time.Parse(time.RFC3339, "2006-02-15T12:01:26.4000+01:00")
+	if err != nil {
+		t.Fatalf("error parsing test time: %s", err)
+	}
+
+	i1 := NewFromTime(t1)
+	i2 := NewFromTime(t2)
+
+	a := roundDownFloat(i1.PreciseBeats(), 0)
+	b := roundDownFloat(i2.PreciseBeats(), 0)
+
+	if (b - a) < 1 {
+		t.Errorf("expected b to be exactly 1 increment higher than a. Got a: %f b: %f", a, b)
+	}
+}
+
 func TestTotalSecondsPreciseBeats(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -64,6 +87,11 @@ func TestTotalSecondsPreciseBeats(t *testing.T) {
 			t:      "2023-01-02T11:11:28+10:00",
 			expect: 91.296296,
 		},
+		{
+			name:   "",
+			t:      "2023-01-02T23:59:59.999999+01:00",
+			expect: 999.988426,
+		},
 	}
 
 	for _, tt := range tests {
@@ -77,8 +105,8 @@ func TestTotalSecondsPreciseBeats(t *testing.T) {
 			if beats := newT.PreciseBeats(); !equalWithTolerance(beats, tt.expect) {
 				t.Errorf("expect %s to be @%f not @%f",
 					tt.t,
-					beats,
 					tt.expect,
+					beats,
 				)
 			}
 		})
@@ -94,12 +122,12 @@ func TestTotalNanosecondsPreciseBeats(t *testing.T) {
 		{
 			name:   "",
 			t:      "2006-02-15T12:00:00-06:00",
-			expect: 791.666667,
+			expect: 791.666666,
 		},
 		{
 			name:   "",
 			t:      "2008-05-11T03:10:07+10:00",
-			expect: 757.025463,
+			expect: 757.025462,
 		},
 		{
 			name:   "",
@@ -108,8 +136,8 @@ func TestTotalNanosecondsPreciseBeats(t *testing.T) {
 		},
 		{
 			name:   "",
-			t:      "2023-01-02T23:59:59.999999999+02:00",
-			expect: 91.296296,
+			t:      "2023-01-02T23:59:59.999999999+01:00",
+			expect: 999.999999,
 		},
 	}
 
@@ -124,8 +152,102 @@ func TestTotalNanosecondsPreciseBeats(t *testing.T) {
 			if beats := newT.PreciseBeats(); !equalWithTolerance(beats, tt.expect) {
 				t.Errorf("expect %s to be @%f not @%f",
 					tt.t,
-					beats,
 					tt.expect,
+					beats,
+				)
+			}
+		})
+	}
+}
+
+func TestTotalSecondsBeats(t *testing.T) {
+	tests := []struct {
+		name   string
+		t      string
+		expect int
+	}{
+		{
+			name:   "",
+			t:      "2006-02-15T12:00:00-06:00",
+			expect: 791,
+		},
+		{
+			name:   "",
+			t:      "2008-05-11T03:10:07+10:00",
+			expect: 757,
+		},
+		{
+			name:   "",
+			t:      "2023-01-02T11:11:28+10:00",
+			expect: 91,
+		},
+		{
+			name:   "",
+			t:      "2023-01-02T23:59:59.999999+01:00",
+			expect: 999,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tTime, err := time.Parse(time.RFC3339, tt.t)
+			if err != nil {
+				t.Fatalf("error parsing test time: %s", err)
+			}
+
+			newT := NewFromTime(tTime)
+			if beats := newT.Beats(); beats != tt.expect {
+				t.Errorf("expect %s to be @%d not @%d",
+					tt.t,
+					tt.expect,
+					beats,
+				)
+			}
+		})
+	}
+}
+
+func TestTotalNanosecondsBeats(t *testing.T) {
+	tests := []struct {
+		name   string
+		t      string
+		expect int
+	}{
+		{
+			name:   "",
+			t:      "2006-02-15T12:00:00-06:00",
+			expect: 791,
+		},
+		{
+			name:   "",
+			t:      "2008-05-11T03:10:07+10:00",
+			expect: 757,
+		},
+		{
+			name:   "",
+			t:      "2023-01-02T11:11:28+10:00",
+			expect: 91,
+		},
+		{
+			name:   "",
+			t:      "2023-01-02T23:59:59.999999999+01:00",
+			expect: 999,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tTime, err := time.Parse(time.RFC3339, tt.t)
+			if err != nil {
+				t.Fatalf("error parsing test time: %s", err)
+			}
+
+			newT := NewFromTimeUsing(tTime, TotalNanoSeconds)
+			if beats := newT.Beats(); beats != tt.expect {
+				t.Errorf("expect %s to be @%d not @%d",
+					tt.t,
+					tt.expect,
+					beats,
 				)
 			}
 		})
