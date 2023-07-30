@@ -43,6 +43,10 @@ func (t *internetTime) SetAlgorithm(algo Algorithm) {
 	t.algorithm = algo
 }
 
+func (t *internetTime) GetTime() time.Time {
+	return t.Time
+}
+
 func (t *internetTime) Beats() int {
 	return int(roundDownFloat(t.PreciseBeats(), 0))
 }
