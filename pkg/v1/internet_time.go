@@ -6,14 +6,21 @@ import (
 )
 
 var (
-	defaultAlgorithm       = TotalSeconds
-	secondsPerBeat         = 86.4
-	nanoPerDay       int64 = 86.4e+13
-	nanoPerBeat      int64 = nanoPerDay / 1000
+	defaultAlgorithm         = TotalSeconds
+	secondsPerBeat           = 86.4
+	nanoPerDay         int64 = 8.64e+13
+	nanoPerBeat        int64 = nanoPerDay / 1000
+	nanoPerHour        int64 = 3.6e+12
+	maxSwatchPrecision int   = 6
 )
 
 func New() *internetTime {
 	return &internetTime{getUtcTime(time.Now()), defaultAlgorithm}
+}
+
+// Alias for New
+func Now() *internetTime {
+	return New()
 }
 
 func NewFromTime(t time.Time) *internetTime {
@@ -45,35 +52,47 @@ func (t *internetTime) PreciseBeats() float64 {
 }
 
 func (t *internetTime) calculateBeats() float64 {
+	n := float64(0)
 	switch t.algorithm {
 	case TotalSeconds:
-		return totalSecondsAlgorithm(t.Time)
+		n = totalSecondsAlgorithm(t.Time)
 	case TotalNanoSeconds:
-		return totalNanosecondsAlgorithm(t.Time)
+		n = totalNanosecondsAlgorithm(t.Time)
 	}
 
-	return 0
+	n = roundDownFloat(n, maxSwatchPrecision)
+
+	return n
 }
 
 func totalSecondsAlgorithm(t time.Time) float64 {
-	return float64(t.Hour()*3600+t.Minute()*60+t.Second()) / secondsPerBeat
+	hourSeconds := t.Hour() * 3600
+	minuteSeconds := t.Minute() * 60
+	totalSeconds := float64(hourSeconds+minuteSeconds+t.Second()) / secondsPerBeat
+	return totalSeconds
 }
 
 func totalNanosecondsAlgorithm(t time.Time) float64 {
-	nanoSecondsSinceYesterday := t.UnixNano() % nanoPerDay
+	// Convert to UTC as that's what unix timestamp will be
+	t = t.In(time.UTC)
+	// t.UnixNano() + nanoPerHour accounts for internetTime being UTC+1
+	nanoSecondsSinceYesterday := (t.UnixNano() + nanoPerHour) % nanoPerDay
+
 	if nanoSecondsSinceYesterday == 0 {
-		return 1
+		nanoSecondsSinceYesterday = nanoPerDay
 	}
 
-	return float64(nanoSecondsSinceYesterday) / float64(nanoPerBeat)
+	totalSeconds := float64(nanoSecondsSinceYesterday) / float64(nanoPerBeat)
+	return totalSeconds
 }
 
-func roundDownFloat(val float64, precision uint) float64 {
+func roundDownFloat(val float64, precision int) float64 {
 	ratio := math.Pow(10, float64(precision))
 	return math.Floor(val*ratio) / ratio
 }
 
 func getUtcTime(t time.Time) time.Time {
+	t = t.UTC()
 	// Because swatch doesn't observe daylight savings, using CET will cause an error
 	biel := time.FixedZone("UTC+1", 1*60*60) // 1 left in to demonstrate calculation
 	return t.In(biel)

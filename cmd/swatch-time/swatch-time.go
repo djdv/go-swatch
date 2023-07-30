@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/djdv/go-swatch"
+	swatch "github.com/djdv/go-swatch/pkg/v1"
 )
 
 func main() {
@@ -23,11 +23,13 @@ func main() {
 			flagSet.PrintDefaults()
 			fmt.Fprint(output, "(no flags defaults to centibeat format @000.00)\n")
 		}
-		raw, standard bool
+		raw, standard, precise, date bool
 	)
 	flagSet.Usage = usage
 	flagSet.BoolVar(&raw, "r", false, "use raw float format @000.000000")
 	flagSet.BoolVar(&standard, "s", false, "use Swatch standard format @000")
+	flagSet.BoolVar(&precise, "p", false, "use a more precise calculation method")
+	flagSet.BoolVar(&date, "d", false, "print date as well")
 
 	if flagSet.Parse(os.Args[1:]) != nil {
 		return
@@ -45,14 +47,25 @@ func main() {
 		fmt.Fprint(flagSet.Output(), "Use none or 1 of the command flags, never combined.")
 		return
 	}
-	var format swatch.FormatStandard
+	var format swatch.Format
 	switch {
 	case raw:
-		format = swatch.Raw
+		format = swatch.Micro
 	case standard:
 		format = swatch.Swatch
 	default:
 		format = swatch.Centi
 	}
-	fmt.Println(swatch.Now(format))
+
+	s := swatch.Now()
+	fs := format.String()
+	if precise {
+		s.SetAlgorithm(swatch.TotalNanoSeconds)
+	}
+
+	if date {
+		fs = "2006-01-02" + fs
+	}
+
+	fmt.Println(s.Format(fs))
 }
