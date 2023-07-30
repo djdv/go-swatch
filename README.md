@@ -6,6 +6,8 @@ A decimal time relative to the Biel, Switzerland timezone, at a ratio of 1,000 "
 
 As a command `cmd/swatch-time`
 ```
+$ swatch-time -h
+
 Usage of swatch-time:
   -d    print date as well
   -p    use a more precise calculation method
