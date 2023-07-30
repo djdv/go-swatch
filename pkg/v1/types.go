@@ -10,8 +10,9 @@ type InternetTime interface {
 	Beats() int
 	PreciseBeats() float64
 
-	// Configuration
+	// Undercovers
 	SetAlgorithm(Algorithm)
+	GetTime() time.Time
 
 	// Strings & Formatting
 	String() string

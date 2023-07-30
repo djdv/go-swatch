@@ -61,6 +61,11 @@ func TestSanity(t *testing.T) {
 	a := roundDownFloat(i1.PreciseBeats(), 0)
 	b := roundDownFloat(i2.PreciseBeats(), 0)
 
+	// Just to test sanity of GetTime
+	if t1.Format("2006-01-02") != i1.GetTime().Format("2006-01-02") {
+		t.Errorf("expected t1 date to be the same as swatchTime date")
+	}
+
 	if (b - a) < 1 {
 		t.Errorf("expected b to be exactly 1 increment higher than a. Got a: %f b: %f", a, b)
 	}
