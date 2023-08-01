@@ -25,6 +25,12 @@ const (
 	Centi
 	Mili
 	Micro
+
+	swatchFormat = "@xxx"
+	deciFormat   = "@xxx.x"
+	centiFormat  = "@xxx.xx"
+	miliFormat   = "@xxx.xxx"
+	microFormat  = "@xxx.xxxxxx"
 )
 
 const (
@@ -40,16 +46,16 @@ type internetTime struct {
 func (f Format) String() string {
 	switch f {
 	case Swatch:
-		return "@xxx"
+		return swatchFormat
 	case Deci:
-		return "@xxx.x"
+		return deciFormat
 	case Centi:
-		return "@xxx.xx"
+		return centiFormat
 	case Mili:
-		return "@xxx.xxx"
+		return miliFormat
 	case Micro:
-		return "@xxx.xxxxxx"
+		return microFormat
+	default:
+		return ""
 	}
-
-	return ""
 }
