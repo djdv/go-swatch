@@ -22,7 +22,7 @@ func (t *internetTime) String() string {
 	return t.Format(swatchFormat)
 }
 
-// Expects layout to only be
+// Expects layout to only be one of the predefined formats
 func (t *internetTime) format(layout Format) string {
 	switch layout {
 	case Swatch:
