@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-var (
+const (
 	defaultAlgorithm         = TotalSeconds
 	secondsPerBeat           = 86.4
 	nanoPerDay         int64 = 8.64e+13
