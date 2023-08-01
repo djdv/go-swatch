@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	swatch "github.com/djdv/go-swatch/pkg/v1"
+	"github.com/djdv/go-swatch"
 )
 
 func main() {
