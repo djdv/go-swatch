@@ -1,9 +1,11 @@
-package swatch
+package swatch_test
 
 import (
 	"math"
 	"testing"
 	"time"
+
+	"github.com/djdv/go-swatch"
 )
 
 func equalWithTolerance(a, b float64) bool {
@@ -13,8 +15,10 @@ func equalWithTolerance(a, b float64) bool {
 }
 
 func TestNewFromTime(t *testing.T) {
-	var now time.Time
-	newT := NewFromTimeUsing(now, defaultAlgorithm)
+	var (
+		now  = time.Now()
+		newT = swatch.New(swatch.WithTime(now))
+	)
 	if newT == nil {
 		t.Errorf("expected NewFromTime to return InternetTime")
 		return
@@ -32,7 +36,7 @@ func TestNew(t *testing.T) {
 		}
 	}()
 
-	newT := NewUsing(defaultAlgorithm)
+	newT := swatch.New()
 	if newT == nil {
 		t.Errorf("expected New to return InternetTime")
 		return
@@ -40,7 +44,7 @@ func TestNew(t *testing.T) {
 
 	// Both of these functionally equivalent - just a sanity check
 	_ = newT.UnixNano()
-	_ = (&internetTime{}).UnixNano()
+	_ = (&swatch.InternetTime{}).UnixNano()
 }
 
 func TestSanity(t *testing.T) {
@@ -55,14 +59,16 @@ func TestSanity(t *testing.T) {
 		t.Fatalf("error parsing test time: %s", err)
 	}
 
-	i1 := NewFromTime(t1)
-	i2 := NewFromTime(t2)
+	var (
+		i1 = swatch.New(swatch.WithTime(t1))
+		i2 = swatch.New(swatch.WithTime(t2))
 
-	a := roundDownFloat(i1.PreciseBeats(), 0)
-	b := roundDownFloat(i2.PreciseBeats(), 0)
+		a = roundDownFloat(i1.PreciseBeats(), 0)
+		b = roundDownFloat(i2.PreciseBeats(), 0)
+	)
 
 	// Just to test sanity of GetTime
-	if t1.Format("2006-01-02") != i1.GetTime().Format("2006-01-02") {
+	if t1.Format("2006-01-02") != i1.Time.Format("2006-01-02") {
 		t.Errorf("expected t1 date to be the same as swatchTime date")
 	}
 
@@ -109,7 +115,7 @@ func TestTotalSecondsPreciseBeats(t *testing.T) {
 				t.Fatalf("error parsing test time: %s", err)
 			}
 
-			newT := NewFromTime(tTime)
+			newT := swatch.New(swatch.WithTime(tTime))
 			if beats := newT.PreciseBeats(); !equalWithTolerance(beats, tt.expect) {
 				t.Errorf("expect %s to be @%f not @%f",
 					tt.t,
@@ -159,7 +165,10 @@ func TestTotalNanosecondsPreciseBeats(t *testing.T) {
 				t.Fatalf("error parsing test time: %s", err)
 			}
 
-			newT := NewFromTimeUsing(tTime, TotalNanoSeconds)
+			newT := swatch.New(
+				swatch.WithTime(tTime),
+				swatch.WithAlgorithm(swatch.TotalNanoSeconds),
+			)
 			if beats := newT.PreciseBeats(); !equalWithTolerance(beats, tt.expect) {
 				t.Errorf("expect %s to be @%f not @%f",
 					tt.t,
@@ -209,7 +218,7 @@ func TestTotalSecondsBeats(t *testing.T) {
 				t.Fatalf("error parsing test time: %s", err)
 			}
 
-			newT := NewFromTime(tTime)
+			newT := swatch.New(swatch.WithTime(tTime))
 			if beats := newT.Beats(); beats != tt.expect {
 				t.Errorf("expect %s to be @%d not @%d",
 					tt.t,
@@ -259,7 +268,10 @@ func TestTotalNanosecondsBeats(t *testing.T) {
 				t.Fatalf("error parsing test time: %s", err)
 			}
 
-			newT := NewFromTimeUsing(tTime, TotalNanoSeconds)
+			newT := swatch.New(
+				swatch.WithTime(tTime),
+				swatch.WithAlgorithm(swatch.TotalNanoSeconds),
+			)
 			if beats := newT.Beats(); beats != tt.expect {
 				t.Errorf("expect %s to be @%d not @%d",
 					tt.t,
@@ -269,4 +281,9 @@ func TestTotalNanosecondsBeats(t *testing.T) {
 			}
 		})
 	}
+}
+
+func roundDownFloat(val float64, precision int) float64 {
+	ratio := math.Pow(10, float64(precision))
+	return math.Floor(val*ratio) / ratio
 }

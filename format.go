@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (t *internetTime) Format(layout string) string {
+func (t *InternetTime) Format(layout string) string {
 	// There's no "@" in time.Format src so it's safe to use as a delimiter
 	// Replace in descending order of precision
 	return strings.NewReplacer(
@@ -18,12 +18,12 @@ func (t *internetTime) Format(layout string) string {
 	).Replace(t.Time.Format(layout))
 }
 
-func (t *internetTime) String() string {
+func (t *InternetTime) String() string {
 	return t.Format(swatchFormat)
 }
 
 // Expects layout to only be one of the predefined formats
-func (t *internetTime) format(layout Format) string {
+func (t *InternetTime) format(layout Format) string {
 	switch layout {
 	case Swatch:
 		return fmt.Sprintf("@%d", t.Beats())
