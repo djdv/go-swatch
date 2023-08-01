@@ -14,50 +14,44 @@ const (
 	maxSwatchPrecision int   = 6
 )
 
-func New() *internetTime {
-	return &internetTime{getUtcTime(time.Now()), defaultAlgorithm}
+type Option func(*InternetTime)
+
+func New(options ...Option) *InternetTime {
+	swatchTime := InternetTime{
+		Algorithm: defaultAlgorithm,
+	}
+	for _, apply := range options {
+		apply(&swatchTime)
+	}
+	if swatchTime.Time.IsZero() {
+		swatchTime.Time = getUtcTime(time.Now())
+	}
+	return &swatchTime
 }
 
-// Alias for New
-func Now() *internetTime {
-	return New()
+func WithAlgorithm(algorithm Algorithm) Option {
+	return func(it *InternetTime) {
+		it.Algorithm = algorithm
+	}
 }
 
-func NewFromTime(t time.Time) *internetTime {
-	return &internetTime{getUtcTime(t), defaultAlgorithm}
+func WithTime(t time.Time) Option {
+	return func(it *InternetTime) {
+		it.Time = getUtcTime(t)
+	}
 }
 
-func NewUsing(algo Algorithm) *internetTime {
-	i := New()
-	i.SetAlgorithm(algo)
-	return i
-}
-
-func NewFromTimeUsing(t time.Time, algo Algorithm) *internetTime {
-	i := NewFromTime(t)
-	i.SetAlgorithm(algo)
-	return i
-}
-
-func (t *internetTime) SetAlgorithm(algo Algorithm) {
-	t.algorithm = algo
-}
-
-func (t *internetTime) GetTime() time.Time {
-	return t.Time
-}
-
-func (t *internetTime) Beats() int {
+func (t *InternetTime) Beats() int {
 	return int(roundDownFloat(t.PreciseBeats(), 0))
 }
 
-func (t *internetTime) PreciseBeats() float64 {
+func (t *InternetTime) PreciseBeats() float64 {
 	return t.calculateBeats()
 }
 
-func (t *internetTime) calculateBeats() float64 {
+func (t *InternetTime) calculateBeats() float64 {
 	n := float64(0)
-	switch t.algorithm {
+	switch t.Algorithm {
 	case TotalSeconds:
 		n = totalSecondsAlgorithm(t.Time)
 	case TotalNanoSeconds:

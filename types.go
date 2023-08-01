@@ -26,9 +26,9 @@ const (
 	TotalNanoSeconds
 )
 
-type internetTime struct {
+type InternetTime struct {
 	time.Time
-	algorithm Algorithm
+	Algorithm
 }
 
 func (f Format) String() string {

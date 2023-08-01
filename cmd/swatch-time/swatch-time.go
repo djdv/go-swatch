@@ -57,12 +57,17 @@ func main() {
 		format = swatch.Centi
 	}
 
-	now := swatch.Now()
+	var options []swatch.Option
 	if precise {
-		now.SetAlgorithm(swatch.TotalNanoSeconds)
+		options = []swatch.Option{
+			swatch.WithAlgorithm(swatch.TotalNanoSeconds),
+		}
 	}
 
-	formatString := format.String()
+	var (
+		now          = swatch.New(options...)
+		formatString = format.String()
+	)
 	if date {
 		formatString = "2006-01-02" + formatString
 	}
