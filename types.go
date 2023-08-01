@@ -2,8 +2,10 @@ package swatch
 
 import "time"
 
-type Algorithm int
-type Format int
+type (
+	Algorithm int
+	Format    int
+)
 
 type InternetTime interface {
 	// Raw time values

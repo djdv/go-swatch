@@ -24,16 +24,15 @@ func (t *internetTime) String() string {
 
 // Expects layout to only be
 func (t *internetTime) format(layout Format) string {
-	r := ""
 	switch layout {
 	case Swatch:
-		r = fmt.Sprintf("@%d", t.Beats())
+		return fmt.Sprintf("@%d", t.Beats())
 	case Deci, Centi, Mili:
 		beats := roundDownFloat(t.PreciseBeats(), int(layout))
-		r = fmt.Sprintf("@%s", strconv.FormatFloat(beats, 'f', -1, 64))
+		return fmt.Sprintf("@%s", strconv.FormatFloat(beats, 'f', -1, 64))
 	case Micro:
-		r = fmt.Sprintf("@%s", strconv.FormatFloat(t.PreciseBeats(), 'f', -1, 64))
+		return fmt.Sprintf("@%s", strconv.FormatFloat(t.PreciseBeats(), 'f', -1, 64))
+	default:
+		return ""
 	}
-
-	return r
 }
