@@ -7,20 +7,6 @@ type (
 	Format    int
 )
 
-type InternetTime interface {
-	// Raw time values
-	Beats() int
-	PreciseBeats() float64
-
-	// Undercovers
-	SetAlgorithm(Algorithm)
-	GetTime() time.Time
-
-	// Strings & Formatting
-	String() string
-	Format(string) string
-}
-
 const (
 	Swatch Format = iota
 	Deci
