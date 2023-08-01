@@ -100,7 +100,10 @@ func TestTotalSecondsPreciseBeats(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			tTime, err := time.Parse(time.RFC3339, tt.t)
 			if err != nil {
 				t.Fatalf("error parsing test time: %s", err)
@@ -147,7 +150,10 @@ func TestTotalNanosecondsPreciseBeats(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			tTime, err := time.Parse(time.RFC3339, tt.t)
 			if err != nil {
 				t.Fatalf("error parsing test time: %s", err)
@@ -194,7 +200,10 @@ func TestTotalSecondsBeats(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			tTime, err := time.Parse(time.RFC3339, tt.t)
 			if err != nil {
 				t.Fatalf("error parsing test time: %s", err)
@@ -241,7 +250,10 @@ func TestTotalNanosecondsBeats(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			tTime, err := time.Parse(time.RFC3339, tt.t)
 			if err != nil {
 				t.Fatalf("error parsing test time: %s", err)
