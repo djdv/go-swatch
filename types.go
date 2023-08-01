@@ -20,14 +20,16 @@ type InternetTime interface {
 }
 
 const (
-	Swatch Format = iota // 0
-	Deci                 // 1
-	Centi                // 2
-	Mili                 // 3
-	Micro                // 4
+	Swatch Format = iota
+	Deci
+	Centi
+	Mili
+	Micro
+)
 
-	TotalSeconds     Algorithm = iota // 0
-	TotalNanoSeconds                  // 1
+const (
+	TotalSeconds Algorithm = iota
+	TotalNanoSeconds
 )
 
 type internetTime struct {
