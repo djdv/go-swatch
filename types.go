@@ -2,23 +2,25 @@ package swatch
 
 import "time"
 
-type (
-	Algorithm int
-	Format    int
-)
+type Algorithm int
 
 const (
-	Swatch Format = iota
-	Deci
-	Centi
-	Mili
-	Micro
-
-	swatchFormat = "@xxx"
-	deciFormat   = "@xxx.x"
-	centiFormat  = "@xxx.xx"
-	miliFormat   = "@xxx.xxx"
-	microFormat  = "@xxx.xxxxxx"
+	// Beats is a format token which gets replaced
+	// with the standard Swatch Internet Time .beats layout.
+	Beats = "@xxx"
+	// DeciBeats is a format token which gets replaced
+	// with a higher precision .beats layout.
+	DeciBeats = "@xxx.x"
+	// CentiBeats is a format token which gets replaced
+	// with a higher precision .beats layout.
+	// Also sometimes called "sub-beats".
+	CentiBeats = "@xxx.xx"
+	// MilliBeats is a format token which gets replaced
+	// with a higher precision .beats layout.
+	MilliBeats = "@xxx.xxx"
+	// MicroBeats is a format token which gets replaced
+	// with a higher precision .beats layout.
+	MicroBeats = "@xxx.xxxxxx"
 )
 
 const (
@@ -29,21 +31,4 @@ const (
 type InternetTime struct {
 	time.Time
 	Algorithm
-}
-
-func (f Format) String() string {
-	switch f {
-	case Swatch:
-		return swatchFormat
-	case Deci:
-		return deciFormat
-	case Centi:
-		return centiFormat
-	case Mili:
-		return miliFormat
-	case Micro:
-		return microFormat
-	default:
-		return ""
-	}
 }

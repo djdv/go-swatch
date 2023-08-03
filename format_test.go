@@ -16,31 +16,31 @@ func TestFormatReturnsBeats(t *testing.T) {
 	}{
 		{
 			name:          "Swatch time format",
-			format:        swatch.Swatch.String(),
+			format:        swatch.Beats,
 			expectedValue: "@91",
 			t:             "2023-01-02T11:11:28+10:00",
 		},
 		{
 			name:          "Deci time format",
-			format:        swatch.Deci.String(),
+			format:        swatch.DeciBeats,
 			expectedValue: "@91.2",
 			t:             "2023-01-02T11:11:28+10:00",
 		},
 		{
 			name:          "Centi time format",
-			format:        swatch.Centi.String(),
+			format:        swatch.CentiBeats,
 			expectedValue: "@91.29",
 			t:             "2023-01-02T11:11:28+10:00",
 		},
 		{
 			name:          "Mili time format",
-			format:        swatch.Mili.String(),
+			format:        swatch.MilliBeats,
 			expectedValue: "@91.296",
 			t:             "2023-01-02T11:11:28+10:00",
 		},
 		{
 			name:          "Micro time format",
-			format:        swatch.Micro.String(),
+			format:        swatch.MicroBeats,
 			expectedValue: "@91.296296",
 			t:             "2023-01-02T11:11:28+10:00",
 		},
@@ -82,7 +82,7 @@ func TestCanCombineFormatting(t *testing.T) {
 	}
 
 	s := swatch.New(swatch.WithTime(tTime))
-	if f := s.Format("2006-01-02 " + swatch.Swatch.String()); f != "2023-01-02 @91" {
+	if f := s.Format("2006-01-02 " + swatch.Beats); f != "2023-01-02 @91" {
 		t.Errorf("Failed to mix formating, got %s", f)
 	}
 }

@@ -47,14 +47,14 @@ func main() {
 		fmt.Fprint(flagSet.Output(), "Use none or 1 of the command flags, never combined.")
 		return
 	}
-	var format swatch.Format
+	var layout string
 	switch {
 	case raw:
-		format = swatch.Micro
+		layout = swatch.MicroBeats
 	case standard:
-		format = swatch.Swatch
+		layout = swatch.Beats
 	default:
-		format = swatch.Centi
+		layout = swatch.CentiBeats
 	}
 
 	var options []swatch.Option
@@ -64,13 +64,10 @@ func main() {
 		}
 	}
 
-	var (
-		now          = swatch.New(options...)
-		formatString = format.String()
-	)
+	now := swatch.New(options...)
 	if date {
-		formatString = "2006-01-02" + formatString
+		layout = "2006-01-02" + layout
 	}
 
-	fmt.Println(now.Format(formatString))
+	fmt.Println(now.Format(layout))
 }
