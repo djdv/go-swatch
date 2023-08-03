@@ -25,9 +25,13 @@ func main() {
 		}
 		raw, standard, precise, date bool
 	)
+	const (
+		rawName      = "r"
+		standardName = "s"
+	)
 	flagSet.Usage = usage
-	flagSet.BoolVar(&raw, "r", false, "use raw float format @000.000000")
-	flagSet.BoolVar(&standard, "s", false, "use Swatch standard format @000")
+	flagSet.BoolVar(&raw, rawName, false, "use raw float format @000.000000")
+	flagSet.BoolVar(&standard, standardName, false, "use Swatch standard format @000")
 	flagSet.BoolVar(&precise, "p", false, "use a more precise calculation method")
 	flagSet.BoolVar(&date, "d", false, "print date as well")
 
@@ -44,7 +48,10 @@ func main() {
 	}
 
 	if raw && standard {
-		fmt.Fprint(flagSet.Output(), "Use none or 1 of the command flags, never combined.")
+		fmt.Fprintf(flagSet.Output(),
+			"Cannot combine -%s and -%s flags.",
+			rawName, standardName,
+		)
 		return
 	}
 	var layout string
