@@ -8,22 +8,57 @@ import (
 	"github.com/djdv/go-swatch"
 )
 
-func TestNewFromTime(t *testing.T) {
-	var (
-		now  = time.Now()
-		newT = swatch.New(swatch.WithTime(now))
-	)
-	if newT == nil {
-		t.Errorf("expected NewFromTime to return InternetTime")
-		return
-	}
-
-	if now.UnixNano() != newT.UnixNano() {
-		t.Errorf("expected UnixNano of InternetTime and time.Time to match")
-	}
+func TestInternetTime(t *testing.T) {
+	t.Parallel()
+	t.Run("constructor", constructor)
+	t.Run("formatting", format)
+	t.Run("behavior", behavior)
 }
 
-func TestNew(t *testing.T) {
+func constructor(t *testing.T) {
+	t.Parallel()
+	t.Run("new", newTime)
+	t.Run("options", options)
+}
+
+func options(t *testing.T) {
+	t.Parallel()
+	t.Run("WithTime", fromTime)
+}
+
+func behavior(t *testing.T) {
+	t.Parallel()
+	t.Run("difference", durationDifference)
+	t.Run("calculations", calculations)
+}
+
+func calculations(t *testing.T) {
+	t.Parallel()
+	t.Run("seconds", seconds)
+	t.Run("nanoseconds", nanoseconds)
+}
+
+func seconds(t *testing.T) {
+	t.Parallel()
+	t.Run("standard", totalSecondsBeats)
+	t.Run("precise", totalSecondsBeatsPrecise)
+}
+
+func nanoseconds(t *testing.T) {
+	t.Parallel()
+	t.Run("standard", totalNanosecondsBeats)
+	t.Run("precise", totalNanosecondsBeatsPrecise)
+}
+
+func format(t *testing.T) {
+	t.Parallel()
+	t.Run("layout", timeLayout)
+	t.Run("string", timeString)
+	t.Run("combined", timeCombined)
+}
+
+func newTime(t *testing.T) {
+	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
 			t.Errorf("Expected uninitialised InternetTime not to throw deref")
@@ -41,7 +76,24 @@ func TestNew(t *testing.T) {
 	_ = (&swatch.InternetTime{}).UnixNano()
 }
 
-func TestSanity(t *testing.T) {
+func fromTime(t *testing.T) {
+	t.Parallel()
+	var (
+		now  = time.Now()
+		newT = swatch.New(swatch.WithTime(now))
+	)
+	if newT == nil {
+		t.Errorf("expected NewFromTime to return InternetTime")
+		return
+	}
+
+	if now.UnixNano() != newT.UnixNano() {
+		t.Errorf("expected UnixNano of InternetTime and time.Time to match")
+	}
+}
+
+func durationDifference(t *testing.T) {
+	t.Parallel()
 	// When given two dates exactly a beat apart, the beats are indeed 1 beat difference
 	t1, err := time.Parse(time.RFC3339, "2006-02-15T12:00:00.000+01:00")
 	if err != nil {
@@ -71,7 +123,59 @@ func TestSanity(t *testing.T) {
 	}
 }
 
-func TestTotalSecondsPreciseBeats(t *testing.T) {
+func totalSecondsBeats(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name   string
+		t      string
+		expect int
+	}{
+		{
+			name:   "",
+			t:      "2006-02-15T12:00:00-06:00",
+			expect: 791,
+		},
+		{
+			name:   "",
+			t:      "2008-05-11T03:10:07+10:00",
+			expect: 757,
+		},
+		{
+			name:   "",
+			t:      "2023-01-02T11:11:28+10:00",
+			expect: 91,
+		},
+		{
+			name:   "",
+			t:      "2023-01-02T23:59:59.999999+01:00",
+			expect: 999,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			tTime, err := time.Parse(time.RFC3339, tt.t)
+			if err != nil {
+				t.Fatalf("error parsing test time: %s", err)
+			}
+
+			newT := swatch.New(swatch.WithTime(tTime))
+			if beats := newT.Beats(); beats != tt.expect {
+				t.Errorf("expect %s to be @%d not @%d",
+					tt.t,
+					tt.expect,
+					beats,
+				)
+			}
+		})
+	}
+}
+
+func totalSecondsBeatsPrecise(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name   string
 		t      string
@@ -121,7 +225,62 @@ func TestTotalSecondsPreciseBeats(t *testing.T) {
 	}
 }
 
-func TestTotalNanosecondsPreciseBeats(t *testing.T) {
+func totalNanosecondsBeats(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name   string
+		t      string
+		expect int
+	}{
+		{
+			name:   "",
+			t:      "2006-02-15T12:00:00-06:00",
+			expect: 791,
+		},
+		{
+			name:   "",
+			t:      "2008-05-11T03:10:07+10:00",
+			expect: 757,
+		},
+		{
+			name:   "",
+			t:      "2023-01-02T11:11:28+10:00",
+			expect: 91,
+		},
+		{
+			name:   "",
+			t:      "2023-01-02T23:59:59.999999999+01:00",
+			expect: 999,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			tTime, err := time.Parse(time.RFC3339, tt.t)
+			if err != nil {
+				t.Fatalf("error parsing test time: %s", err)
+			}
+
+			newT := swatch.New(
+				swatch.WithTime(tTime),
+				swatch.WithAlgorithm(swatch.TotalNanoSeconds),
+			)
+			if beats := newT.Beats(); beats != tt.expect {
+				t.Errorf("expect %s to be @%d not @%d",
+					tt.t,
+					tt.expect,
+					beats,
+				)
+			}
+		})
+	}
+}
+
+func totalNanosecondsBeatsPrecise(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name   string
 		t      string
@@ -174,110 +333,8 @@ func TestTotalNanosecondsPreciseBeats(t *testing.T) {
 	}
 }
 
-func TestTotalSecondsBeats(t *testing.T) {
-	tests := []struct {
-		name   string
-		t      string
-		expect int
-	}{
-		{
-			name:   "",
-			t:      "2006-02-15T12:00:00-06:00",
-			expect: 791,
-		},
-		{
-			name:   "",
-			t:      "2008-05-11T03:10:07+10:00",
-			expect: 757,
-		},
-		{
-			name:   "",
-			t:      "2023-01-02T11:11:28+10:00",
-			expect: 91,
-		},
-		{
-			name:   "",
-			t:      "2023-01-02T23:59:59.999999+01:00",
-			expect: 999,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			tTime, err := time.Parse(time.RFC3339, tt.t)
-			if err != nil {
-				t.Fatalf("error parsing test time: %s", err)
-			}
-
-			newT := swatch.New(swatch.WithTime(tTime))
-			if beats := newT.Beats(); beats != tt.expect {
-				t.Errorf("expect %s to be @%d not @%d",
-					tt.t,
-					tt.expect,
-					beats,
-				)
-			}
-		})
-	}
-}
-
-func TestTotalNanosecondsBeats(t *testing.T) {
-	tests := []struct {
-		name   string
-		t      string
-		expect int
-	}{
-		{
-			name:   "",
-			t:      "2006-02-15T12:00:00-06:00",
-			expect: 791,
-		},
-		{
-			name:   "",
-			t:      "2008-05-11T03:10:07+10:00",
-			expect: 757,
-		},
-		{
-			name:   "",
-			t:      "2023-01-02T11:11:28+10:00",
-			expect: 91,
-		},
-		{
-			name:   "",
-			t:      "2023-01-02T23:59:59.999999999+01:00",
-			expect: 999,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			tTime, err := time.Parse(time.RFC3339, tt.t)
-			if err != nil {
-				t.Fatalf("error parsing test time: %s", err)
-			}
-
-			newT := swatch.New(
-				swatch.WithTime(tTime),
-				swatch.WithAlgorithm(swatch.TotalNanoSeconds),
-			)
-			if beats := newT.Beats(); beats != tt.expect {
-				t.Errorf("expect %s to be @%d not @%d",
-					tt.t,
-					tt.expect,
-					beats,
-				)
-			}
-		})
-	}
-}
-
-func TestFormatReturnsBeats(t *testing.T) {
+func timeLayout(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name          string
 		format        string
@@ -332,7 +389,8 @@ func TestFormatReturnsBeats(t *testing.T) {
 	}
 }
 
-func TestInternetTimeString(t *testing.T) {
+func timeString(t *testing.T) {
+	t.Parallel()
 	tTime, err := time.Parse(time.RFC3339, "2023-01-02T11:11:28+10:00")
 	if err != nil {
 		t.Fatalf("error parsing test time: %s", err)
@@ -345,7 +403,8 @@ func TestInternetTimeString(t *testing.T) {
 	}
 }
 
-func TestCanCombineFormatting(t *testing.T) {
+func timeCombined(t *testing.T) {
+	t.Parallel()
 	tTime, err := time.Parse(time.RFC3339, "2023-01-02T11:11:28+10:00")
 	if err != nil {
 		t.Fatalf("error parsing test time: %s", err)
