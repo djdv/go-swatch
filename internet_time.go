@@ -84,6 +84,19 @@ func totalNanosecondsAlgorithm(t time.Time) float64 {
 	return totalSeconds
 }
 
+func precisionOf(format string) int {
+	switch format {
+	case DeciBeats:
+		return 1
+	case CentiBeats:
+		return 2
+	case MilliBeats:
+		return 3
+	default:
+		return 0
+	}
+}
+
 func roundDownFloat(val float64, precision int) float64 {
 	ratio := math.Pow(10, float64(precision))
 	return math.Floor(val*ratio) / ratio
