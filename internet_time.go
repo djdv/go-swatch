@@ -1,12 +1,47 @@
 package swatch
 
 import (
+	"fmt"
 	"math"
+	"strconv"
+	"strings"
 	"time"
 )
 
+type (
+	Algorithm    int
+	InternetTime struct {
+		time.Time
+		Algorithm
+	}
+	Option func(*InternetTime)
+)
+
 const (
-	defaultAlgorithm         = TotalSeconds
+	// Beats is a format token which gets replaced
+	// with the standard Swatch Internet Time .beats layout.
+	Beats = "@xxx"
+	// DeciBeats is a format token which gets replaced
+	// with a higher precision .beats layout.
+	DeciBeats = "@xxx.x"
+	// CentiBeats is a format token which gets replaced
+	// with a higher precision .beats layout.
+	// Also sometimes called "sub-beats".
+	CentiBeats = "@xxx.xx"
+	// MilliBeats is a format token which gets replaced
+	// with a higher precision .beats layout.
+	MilliBeats = "@xxx.xxx"
+	// MicroBeats is a format token which gets replaced
+	// with a higher precision .beats layout.
+	MicroBeats = "@xxx.xxxxxx"
+)
+
+const (
+	TotalSeconds Algorithm = iota
+	TotalNanoSeconds
+)
+
+const (
 	secondsPerBeat           = 86.4
 	nanoPerDay         int64 = 8.64e+13
 	nanoPerBeat        int64 = nanoPerDay / 1000
@@ -14,11 +49,9 @@ const (
 	maxSwatchPrecision int   = 6
 )
 
-type Option func(*InternetTime)
-
 func New(options ...Option) *InternetTime {
 	swatchTime := InternetTime{
-		Algorithm: defaultAlgorithm,
+		Algorithm: TotalSeconds,
 	}
 	for _, apply := range options {
 		apply(&swatchTime)
@@ -39,6 +72,37 @@ func WithTime(t time.Time) Option {
 	return func(it *InternetTime) {
 		it.Time = getUtcTime(t)
 	}
+}
+
+func (t *InternetTime) Format(layout string) string {
+	// There's no "@" in time.Format src so it's safe to use as a delimiter
+	// Replace in descending order of precision
+	return strings.NewReplacer(
+		MicroBeats, t.format(MicroBeats),
+		MilliBeats, t.format(MilliBeats),
+		CentiBeats, t.format(CentiBeats),
+		DeciBeats, t.format(DeciBeats),
+		Beats, t.format(Beats),
+	).Replace(t.Time.Format(layout))
+}
+
+// Expects layout to only be one of the predefined format tokens.
+func (t *InternetTime) format(layout string) string {
+	switch layout {
+	case Beats:
+		return fmt.Sprintf("@%d", t.Beats())
+	case DeciBeats, CentiBeats, MilliBeats:
+		beats := roundDownFloat(t.PreciseBeats(), precisionOf(layout))
+		return fmt.Sprintf("@%s", strconv.FormatFloat(beats, 'f', -1, 64))
+	case MicroBeats:
+		return fmt.Sprintf("@%s", strconv.FormatFloat(t.PreciseBeats(), 'f', -1, 64))
+	default:
+		return ""
+	}
+}
+
+func (t *InternetTime) String() string {
+	return t.Format(Beats)
 }
 
 func (t *InternetTime) Beats() int {
