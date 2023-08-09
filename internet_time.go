@@ -74,6 +74,9 @@ func TotalNanoSeconds(t time.Time) float64 {
 	return float64(sinceYesterday) / float64(nanoPerBeat)
 }
 
+// New constructs an [InternetTime] using
+// the current time and an [Algorithm] of [TotalSeconds]
+// by default.
 func New(options ...Option) *InternetTime {
 	swatchTime := InternetTime{
 		Algorithm: TotalSeconds,
@@ -87,18 +90,27 @@ func New(options ...Option) *InternetTime {
 	return &swatchTime
 }
 
+// WithAlgorithm overrides the default [Algorithm] used
+// to calculate beats.
 func WithAlgorithm(algorithm Algorithm) Option {
 	return func(it *InternetTime) {
 		it.Algorithm = algorithm
 	}
 }
 
+// WithTime overrides the default time value used
+// in the constructor.
 func WithTime(t time.Time) Option {
 	return func(it *InternetTime) {
 		it.Time = getUtcTime(t)
 	}
 }
 
+// Format returns a textual representation of the time value formatted according
+// to the layout defined by the argument.
+//
+// [InternetTime] extends the [time.Time.Format] token set;
+// adding tokens like [Beats], [CentiBeats], and others.
 func (t *InternetTime) Format(layout string) string {
 	// There's no "@" in time.Format src so it's safe to use as a delimiter
 	// Replace in descending order of precision
@@ -130,10 +142,14 @@ func (t *InternetTime) String() string {
 	return t.Format(Beats)
 }
 
+// Beats returns a float representation of beats
+// rounded down to the Swatch standard resolution.
 func (t *InternetTime) Beats() int {
 	return int(roundDownFloat(t.PreciseBeats(), 0))
 }
 
+// PreciseBeats returns a float representation of beats
+// using a precision higher than the Swatch standard.
 func (t *InternetTime) PreciseBeats() float64 {
 	return t.calculateBeats()
 }
