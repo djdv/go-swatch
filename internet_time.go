@@ -9,7 +9,10 @@ import (
 )
 
 type (
-	Algorithm    int
+	// Algorithm defines the method used
+	// when calculating the beats of a
+	// time value.
+	Algorithm    func(time.Time) float64
 	InternetTime struct {
 		time.Time
 		Algorithm
@@ -36,18 +39,40 @@ const (
 	MicroBeats = "@xxx.xxxxxx"
 )
 
-const (
-	TotalSeconds Algorithm = iota
-	TotalNanoSeconds
-)
+// TotalSeconds is an [Algorithm] which uses
+// a time resolution of seconds to calculate
+// beats.
+func TotalSeconds(t time.Time) float64 {
+	const secondsPerBeat = 86.4
+	var (
+		hourSeconds   = t.Hour() * 3600
+		minuteSeconds = t.Minute() * 60
+		seconds       = t.Second()
+		sum           = float64(hourSeconds + minuteSeconds + seconds)
+	)
+	return sum / secondsPerBeat
+}
 
-const (
-	secondsPerBeat           = 86.4
-	nanoPerDay         int64 = 8.64e+13
-	nanoPerBeat        int64 = nanoPerDay / 1000
-	nanoPerHour        int64 = 3.6e+12
-	maxSwatchPrecision int   = 6
-)
+// TotalNanoSeconds is an [Algorithm] which uses
+// a time resolution of nanoseconds to calculate
+// beats.
+func TotalNanoSeconds(t time.Time) float64 {
+	const (
+		nanoPerDay  int64 = 8.64e+13
+		nanoPerBeat int64 = nanoPerDay / 1000
+		nanoPerHour int64 = 3.6e+12
+	)
+	var (
+		utc  = t.In(time.UTC) // Normalize to UTC.
+		nano = utc.UnixNano()
+		// Account for Internet Time being UTC+1.
+		sinceYesterday = (nano + nanoPerHour) % nanoPerDay
+	)
+	if sinceYesterday == 0 {
+		sinceYesterday = nanoPerDay
+	}
+	return float64(sinceYesterday) / float64(nanoPerBeat)
+}
 
 func New(options ...Option) *InternetTime {
 	swatchTime := InternetTime{
@@ -114,38 +139,9 @@ func (t *InternetTime) PreciseBeats() float64 {
 }
 
 func (t *InternetTime) calculateBeats() float64 {
-	n := float64(0)
-	switch t.Algorithm {
-	case TotalSeconds:
-		n = totalSecondsAlgorithm(t.Time)
-	case TotalNanoSeconds:
-		n = totalNanosecondsAlgorithm(t.Time)
-	}
-
-	n = roundDownFloat(n, maxSwatchPrecision)
-
-	return n
-}
-
-func totalSecondsAlgorithm(t time.Time) float64 {
-	hourSeconds := t.Hour() * 3600
-	minuteSeconds := t.Minute() * 60
-	totalSeconds := float64(hourSeconds+minuteSeconds+t.Second()) / secondsPerBeat
-	return totalSeconds
-}
-
-func totalNanosecondsAlgorithm(t time.Time) float64 {
-	// Convert to UTC as that's what unix timestamp will be
-	t = t.In(time.UTC)
-	// t.UnixNano() + nanoPerHour accounts for internetTime being UTC+1
-	nanoSecondsSinceYesterday := (t.UnixNano() + nanoPerHour) % nanoPerDay
-
-	if nanoSecondsSinceYesterday == 0 {
-		nanoSecondsSinceYesterday = nanoPerDay
-	}
-
-	totalSeconds := float64(nanoSecondsSinceYesterday) / float64(nanoPerBeat)
-	return totalSeconds
+	const maxSwatchPrecision int = 6
+	beats := t.Algorithm(t.Time)
+	return roundDownFloat(beats, maxSwatchPrecision)
 }
 
 func precisionOf(format string) int {
