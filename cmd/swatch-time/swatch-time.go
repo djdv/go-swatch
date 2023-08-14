@@ -33,26 +33,73 @@ func parseArgv() *settings {
 		set = settings{
 			layout: swatch.CentiBeats,
 		}
+		flagSet = newFlagSet(flag.ExitOnError)
+		cmdName = flagSet.Name()
+	)
+	(&set).registerFlags(flagSet)
+	flagSet.Usage = func() {
+		output := flagSet.Output()
+		fmt.Fprintf(output, "Usage of %s:\n", cmdName)
+		flagSet.PrintDefaults()
+		fmt.Fprint(output, "(no flags defaults to centibeat format @000.00)\n")
+	}
+	// We ignore this error because our
+	// [flag.Flagset] is set to [flag.ExitOnError].
+	_ = flagSet.Parse(os.Args[1:])
+	if args := flagSet.Args(); len(args) > 0 {
+		fmt.Fprintf(flagSet.Output(),
+			"%s accepts no arguments but was passed: %s\n",
+			cmdName, strings.Join(args, ", "),
+		)
+		flagSet.Usage()
+		os.Exit(2)
+	}
+	return &set
+}
+
+func newFlagSet(eh flag.ErrorHandling) *flag.FlagSet {
+	var (
 		execName = filepath.Base(os.Args[0])
 		cmdName  = strings.TrimSuffix(execName, filepath.Ext(execName))
-		flagSet  = flag.NewFlagSet(cmdName, flag.ExitOnError)
-		usage    = func() {
-			output := flagSet.Output()
-			fmt.Fprintf(output, "Usage of %s:\n", cmdName)
-			flagSet.PrintDefaults()
-			fmt.Fprint(output, "(no flags defaults to centibeat format @000.00)\n")
-		}
 	)
-	flagSet.Usage = usage
+	return flag.NewFlagSet(cmdName, eh)
+}
+
+func (set *settings) registerFlags(flagSet *flag.FlagSet) {
+	set.registerDateFlag(flagSet)
+	set.registerFormatFlags(flagSet)
+	set.registerPreciseFlag(flagSet)
+}
+
+func (set *settings) registerDateFlag(flagSet *flag.FlagSet) {
 	const (
-		rawName       = "r"
-		rawUsage      = "use raw float format @000.000000"
-		standardName  = "s"
-		standardUsage = "use Swatch standard format @000"
+		name  = "d"
+		usage = "print date as well"
+	)
+	flagSet.BoolFunc(name, usage, func(parameter string) error {
+		useDate, err := strconv.ParseBool(parameter)
+		if err != nil {
+			return err
+		}
+		if useDate {
+			set.prefix = time.DateOnly
+		}
+		return nil
+	})
+}
+
+func (set *settings) registerFormatFlags(flagSet *flag.FlagSet) {
+	const (
+		rawName        = "r"
+		rawUsage       = "use raw float format @000.000000"
+		rawLayout      = swatch.MicroBeats
+		standardName   = "s"
+		standardUsage  = "use Swatch standard format @000"
+		standardLayout = swatch.Beats
 	)
 	var (
 		rawFlag, standardFlag bool
-		handleLayout          = func(parameter, layout string) error {
+		parseFormatFlag       = func(parameter, layout string) error {
 			if rawFlag && standardFlag {
 				return fmt.Errorf(
 					"cannot combine -%s and -%s flags",
@@ -71,57 +118,30 @@ func parseArgv() *settings {
 	)
 	flagSet.BoolFunc(rawName, rawUsage, func(parameter string) error {
 		rawFlag = true
-		return handleLayout(parameter, swatch.MicroBeats)
+		return parseFormatFlag(parameter, rawLayout)
 	})
 	flagSet.BoolFunc(standardName, standardUsage, func(parameter string) error {
 		standardFlag = true
-		return handleLayout(parameter, swatch.Beats)
+		return parseFormatFlag(parameter, standardLayout)
 	})
+}
+
+func (set *settings) registerPreciseFlag(flagSet *flag.FlagSet) {
 	const (
-		preciseName  = "p"
-		preciseUsage = "use a more precise calculation algorithm"
+		name  = "p"
+		usage = "use a more precise calculation algorithm"
 	)
-	flagSet.BoolFunc(preciseName, preciseUsage, func(parameter string) error {
+	flagSet.BoolFunc(name, usage, func(parameter string) error {
 		usePrecise, err := strconv.ParseBool(parameter)
 		if err != nil {
 			return err
 		}
-		if !usePrecise {
-			return nil
+		if usePrecise {
+			set.options = append(
+				set.options,
+				swatch.WithAlgorithm(swatch.TotalNanoSeconds),
+			)
 		}
-		set.options = append(
-			set.options,
-			swatch.WithAlgorithm(swatch.TotalNanoSeconds),
-		)
 		return nil
 	})
-	const (
-		dateName  = "d"
-		dateUsage = "print date as well"
-	)
-	flagSet.BoolFunc(dateName, dateUsage, func(parameter string) error {
-		useDate, err := strconv.ParseBool(parameter)
-		if err != nil {
-			return err
-		}
-		if !useDate {
-			return nil
-		}
-		set.prefix = time.DateOnly
-		return nil
-	})
-	// We ignore this error because our
-	// [flag.Flagset] is set to [flag.ExitOnError].
-	_ = flagSet.Parse(os.Args[1:])
-
-	if args := flagSet.Args(); len(args) > 0 {
-		fmt.Fprintf(flagSet.Output(),
-			"%s accepts no arguments but was passed: %s\n",
-			cmdName, strings.Join(args, ", "),
-		)
-		flagSet.Usage()
-		os.Exit(2)
-	}
-
-	return &set
 }
